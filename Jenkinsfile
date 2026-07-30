@@ -2,23 +2,14 @@ pipeline {
     agent any
 
     environment {
-        REPO_URL = 'git@github.com:yourusername/your-repo.git'
         IMAGE_NAME = 'yourprivateregistry.com/yourproject/assignment'
         IMAGE_TAG = "${BUILD_NUMBER}"
         DOCKER_CREDENTIALS_ID = 'dockerhub-credentials' // Jenkins credentials ID
-        GIT_CREDENTIALS_ID = 'github-credentials' // Jenkins credentials ID
         SLACK_CHANNEL = '#build-notifications'
         DEPLOY_COMPOSE_FILE = 'docker-compose.yml'
     }
 
     stages {
-        stage('SCM Pull') {
-            steps {
-                checkout([$class: 'GitSCM', branches: [[name: 'main']],
-                          userRemoteConfigs: [[credentialsId: env.GIT_CREDENTIALS_ID, url: env.REPO_URL]]])
-            }
-        }
-
         stage('Install Dependencies and Run Tests') {
             steps {
                 sh 'mvn clean test'
@@ -41,10 +32,8 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                script {
-                    sh "docker-compose -f ${env.DEPLOY_COMPOSE_FILE} down || true"
-                    sh "docker-compose -f ${env.DEPLOY_COMPOSE_FILE} up -d"
-                }
+                sh "docker-compose -f ${env.DEPLOY_COMPOSE_FILE} down || true"
+                sh "docker-compose -f ${env.DEPLOY_COMPOSE_FILE} up -d"
             }
         }
 
@@ -80,18 +69,18 @@ pipeline {
             slackSend(channel: env.SLACK_CHANNEL, color: 'good', message: "Build #${env.BUILD_NUMBER} succeeded.")
         }
         failure {
-            // Rollback logic: redeploy previous image
+            // Implement rollback logic here
             script {
-                def previousTag = 'previous-success-tag' // Implement logic to get previous tag
+                // Example rollback: redeploy previous image
+                // You might want to store previous image tags or implement a more robust rollback
                 sh "docker-compose down || true"
-                sh "docker pull ${env.IMAGE_NAME}:${previousTag} || true"
-                sh "docker tag ${env.IMAGE_NAME}:${previousTag} ${env.IMAGE_NAME}:${env.BUILD_NUMBER}"
-                sh "docker-compose -f ${env.DEPLOY_COMPOSE_FILE} up -d"
+                // Optionally, pull and redeploy previous image
+                // sh "docker pull ${env.IMAGE_NAME}:previous-tag || true"
+                // sh "docker-compose up -d"
             }
             slackSend(channel: env.SLACK_CHANNEL, color: 'danger', message: "Build #${env.BUILD_NUMBER} failed.")
         }
         always {
-            // Cleanup dangling images
             sh 'docker image prune -f'
         }
     }
