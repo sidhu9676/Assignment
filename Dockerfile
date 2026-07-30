@@ -1,40 +1,27 @@
-# --- Build Stage ---
-FROM node:18-alpine AS builder
-
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
+# Stage 1: Build
+FROM maven:3.8.5-openjdk-11-slim AS build
 WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests
 
-# Copy package files first
-COPY package*.json ./
+# Stage 2: Runtime with minimal image
+FROM openjdk:11-jre-slim
 
-# Install dependencies
-RUN npm install
+# Create a non-root user
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 
-# Copy source code
-COPY . .
+# Copy the jar from build stage
+COPY --from=build /app/target/assignment-1.0-SNAPSHOT.jar /app/app.jar
 
-# Optional build step
-# RUN npm run build
-
-# --- Final Stage ---
-FROM node:18-alpine
-
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
-WORKDIR /app
-
-# Copy from builder
-COPY --from=builder /app /app
-
-# Remove dev dependencies
-RUN npm prune --production
-
-# Change ownership
+# Set permissions
 RUN chown -R appuser:appgroup /app
 
+# Switch to non-root user
 USER appuser
 
-EXPOSE 3000
+# Expose port
+EXPOSE 8080
 
-CMD ["node", "server.js"]
+# Run the application
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
