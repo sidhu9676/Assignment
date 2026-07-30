@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'sidhu9676/yourproject/assignment'
+        IMAGE_NAME = 'sidhu9676/assignment:15'
         IMAGE_TAG = "${BUILD_NUMBER}"
         DOCKER_CREDENTIALS_ID = 'docker' // Jenkins credentials ID for Docker Hub
         DEPLOY_COMPOSE_FILE = 'docker-compose.yml'
