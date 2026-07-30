@@ -14,7 +14,7 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 WORKDIR /app
 
 # Copy the jar from build stage
-COPY --from=build /app/target/assignment-1.0-SNAPSHOT.jar /app/app.jar
+COPY --from=build /app/target/devops-assignment-1.0.0.jar /app/app.jar
 
 # Set permissions
 RUN chown -R appuser:appgroup /app
