@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'yourprivateregistry.com/yourproject/assignment'
+        IMAGE_NAME = 'sidhu9676/yourproject/assignment'
         IMAGE_TAG = "${BUILD_NUMBER}"
         DOCKER_CREDENTIALS_ID = 'docker' // Jenkins credentials ID
         SLACK_CHANNEL = '#build-notifications'
