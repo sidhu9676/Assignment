@@ -1,45 +1,40 @@
-# --- Builder Stage ---
+# --- Build Stage ---
 FROM node:18-alpine AS builder
 
-# Create a non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files and install dependencies
+# Copy package files first
 COPY package*.json ./
-RUN npm install --production
+
+# Install dependencies
+RUN npm install
 
 # Copy source code
 COPY . .
 
-# Build step if needed
+# Optional build step
 # RUN npm run build
 
 # --- Final Stage ---
 FROM node:18-alpine
 
-# Create a non-root user in the final image
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# Set working directory
 WORKDIR /app
 
-# Copy only necessary artifacts from builder
+# Copy from builder
 COPY --from=builder /app /app
 
-# Install only production dependencies
+# Remove dev dependencies
 RUN npm prune --production
 
-# Change ownership to non-root user
+# Change ownership
 RUN chown -R appuser:appgroup /app
 
-# Switch to non-root user
 USER appuser
 
-# Expose port
 EXPOSE 3000
 
-# Start command
 CMD ["node", "server.js"]
