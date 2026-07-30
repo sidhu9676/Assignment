@@ -2,27 +2,14 @@ version: '3.8'
 
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      cache_from:
-        - type: local
-    image: myregistry.example.com/myapp:${BUILD_NUMBER}
+    build: .
     ports:
-      - "8080:3000"
-    environment:
-      NODE_ENV: production
+      - "8080:8080"
     restart: always
-    depends_on:
-      - db
-
-  db:
-    image: mongo:5.0-alpine
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
-    volumes:
-      - mongo-data:/data/db
-
-volumes:
-  mongo-data:
+      - ENV=production
