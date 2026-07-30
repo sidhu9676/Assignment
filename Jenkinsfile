@@ -1,14 +1,16 @@
 pipeline {
     agent any
+
     environment {
-        REPO_URL = 'https://github.com/your_org/your_repo.git'
-        IMAGE_NAME = 'myregistry.example.com/myapp'
-        IMAGE_TAG = "build-${env.BUILD_NUMBER}"
-        DOCKER_CREDENTIALS_ID = 'docker-registry-credentials'
-        GIT_CREDENTIALS_ID = 'github-credentials'
-        SLACK_CHANNEL = '#devops'
-        SLACK_CREDENTIALS_ID = 'slack-token'
+        REPO_URL = 'git@github.com:yourusername/your-repo.git'
+        IMAGE_NAME = 'yourprivateregistry.com/yourproject/assignment'
+        IMAGE_TAG = "${BUILD_NUMBER}"
+        DOCKER_CREDENTIALS_ID = 'dockerhub-credentials' // Jenkins credentials ID
+        GIT_CREDENTIALS_ID = 'github-credentials' // Jenkins credentials ID
+        SLACK_CHANNEL = '#build-notifications'
+        DEPLOY_COMPOSE_FILE = 'docker-compose.yml'
     }
+
     stages {
         stage('SCM Pull') {
             steps {
@@ -16,78 +18,81 @@ pipeline {
                           userRemoteConfigs: [[credentialsId: env.GIT_CREDENTIALS_ID, url: env.REPO_URL]]])
             }
         }
+
         stage('Install Dependencies and Run Tests') {
             steps {
-                sh 'npm install'
-                sh 'npm test'
+                sh 'mvn clean test'
             }
         }
-        stage('Build') {
+
+        stage('Build Docker Image') {
             steps {
                 script {
-                    // Building Docker image with cache
-                    docker.withRegistry('https://myregistry.example.com', env.DOCKER_CREDENTIALS_ID) {
+                    docker.withRegistry('https://yourprivateregistry.com', env.DOCKER_CREDENTIALS_ID) {
                         def customImage = docker.build("${env.IMAGE_NAME}:${env.IMAGE_TAG}")
                         // Push image
                         customImage.push()
-                        // Save image for rollback if needed
+                        // Save image for later rollback if needed
                         env.LATEST_IMAGE = "${env.IMAGE_NAME}:${env.IMAGE_TAG}"
                     }
                 }
             }
         }
+
         stage('Deploy') {
             steps {
-                sh '''
-                # Pull latest image
-                docker-compose down --remove-orphans
-                docker-compose pull
-                docker-compose up -d
-                '''
-                // Wait for readiness
                 script {
-                    waitUntil {
-                        def response = sh(
-                            script: "curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/health",
-                            returnStdout: true
-                        ).trim()
-                        return response == '200'
+                    sh "docker-compose -f ${env.DEPLOY_COMPOSE_FILE} down || true"
+                    sh "docker-compose -f ${env.DEPLOY_COMPOSE_FILE} up -d"
+                }
+            }
+        }
+
+        stage('Wait for Readiness') {
+            steps {
+                script {
+                    def retries = 10
+                    def success = false
+                    for (int i=0; i<retries; i++) {
+                        def response = sh(script: "curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/health", returnStdout: true).trim()
+                        if (response == '200') {
+                            success = true
+                            break
+                        }
+                        sleep 10
+                    }
+                    if (!success) {
+                        error("Application not healthy after retries")
                     }
                 }
             }
         }
-        stage('Verify Deployment') {
+
+        stage('Curl Verification') {
             steps {
                 sh 'curl -f http://localhost:8080/health'
             }
         }
     }
+
     post {
         success {
-            slackSend(channel: env.SLACK_CHANNEL, color: 'good', message: "Build ${env.BUILD_NUMBER} succeeded.")
+            slackSend(channel: env.SLACK_CHANNEL, color: 'good', message: "Build #${env.BUILD_NUMBER} succeeded.")
         }
         failure {
-            slackSend(channel: env.SLACK_CHANNEL, color: 'danger', message: "Build ${env.BUILD_NUMBER} failed.")
-            // Rollback to previous image if exists
+            // Rollback logic: redeploy previous image
             script {
-                def previousImage = getPreviousImage()
-                if (previousImage) {
-                    sh "docker-compose down"
-                    sh "docker tag ${previousImage} ${env.IMAGE_NAME}:latest"
-                    sh "docker-compose up -d"
-                }
+                def previousTag = 'previous-success-tag' // Implement logic to get previous tag
+                sh "docker-compose down || true"
+                sh "docker pull ${env.IMAGE_NAME}:${previousTag} || true"
+                sh "docker tag ${env.IMAGE_NAME}:${previousTag} ${env.IMAGE_NAME}:${env.BUILD_NUMBER}"
+                sh "docker-compose -f ${env.DEPLOY_COMPOSE_FILE} up -d"
             }
+            slackSend(channel: env.SLACK_CHANNEL, color: 'danger', message: "Build #${env.BUILD_NUMBER} failed.")
         }
         always {
-            // Cleanup dangling images and containers
-            sh 'docker system prune -f'
-            // Notify build status
-            slackSend(channel: env.SLACK_CHANNEL, message: "Build ${env.BUILD_NUMBER} completed.")
+            // Cleanup dangling images
+            sh 'docker image prune -f'
         }
     }
-}
-
-def getPreviousImage() {
-    // Implement logic to retrieve last successful image tag, e.g., from a file or registry
-    return 'myregistry.example.com/myapp:build-123'
 }
