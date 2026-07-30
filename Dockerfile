@@ -1,15 +1,17 @@
 # Stage 1: Build
-FROM maven:3.8.5-openjdk-11-slim AS build
+FROM maven:3.8.6-eclipse-temurin-11 AS build
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Stage 2: Runtime with minimal image
-FROM openjdk:11-jre-slim
+FROM eclipse-temurin:11-jre-alpine
 
 # Create a non-root user
-RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
 
 # Copy the jar from build stage
 COPY --from=build /app/target/assignment-1.0-SNAPSHOT.jar /app/app.jar
