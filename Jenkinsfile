@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        REPO_URL = 'git@github.com:your_org/your_repo.git'
+        REPO_URL = 'https://github.com/your_org/your_repo.git'
         IMAGE_NAME = 'myregistry.example.com/myapp'
         IMAGE_TAG = "build-${env.BUILD_NUMBER}"
         DOCKER_CREDENTIALS_ID = 'docker-registry-credentials'
