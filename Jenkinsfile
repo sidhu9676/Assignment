@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = 'yourprivateregistry.com/yourproject/assignment'
         IMAGE_TAG = "${BUILD_NUMBER}"
-        DOCKER_CREDENTIALS_ID = 'dockerhub-credentials' // Jenkins credentials ID
+        DOCKER_CREDENTIALS_ID = 'docker' // Jenkins credentials ID
         SLACK_CHANNEL = '#build-notifications'
         DEPLOY_COMPOSE_FILE = 'docker-compose.yml'
     }
