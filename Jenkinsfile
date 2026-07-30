@@ -45,12 +45,14 @@ pipeline {
                 docker-compose up -d
                 '''
                 // Wait for readiness
-                waitUntil {
-                    def response = sh(
-                        script: "curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/health",
-                        returnStdout: true
-                    ).trim()
-                    return response == '200'
+                script {
+                    waitUntil {
+                        def response = sh(
+                            script: "curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/health",
+                            returnStdout: true
+                        ).trim()
+                        return response == '200'
+                    }
                 }
             }
         }
