@@ -5,7 +5,6 @@ pipeline {
         IMAGE_NAME = 'sidhu9676/yourproject/assignment'
         IMAGE_TAG = "${BUILD_NUMBER}"
         DOCKER_CREDENTIALS_ID = 'docker' // Jenkins credentials ID for Docker Hub
-        SLACK_CHANNEL = '#build-notifications'
         DEPLOY_COMPOSE_FILE = 'docker-compose.yml'
     }
 
@@ -19,15 +18,14 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Empty string '' defaults to Docker Hub. 
-                    // Replace with your real registry URL if using a private container registry.
+                    // Empty string '' defaults to public Docker Hub registry.
                     docker.withRegistry('', env.DOCKER_CREDENTIALS_ID) {
                         def customImage = docker.build("${env.IMAGE_NAME}:${env.IMAGE_TAG}")
                         
                         // Push image to registry
                         customImage.push()
                         
-                        // Save image tag for later reference/rollback
+                        // Save image tag for later reference
                         env.LATEST_IMAGE = "${env.IMAGE_NAME}:${env.IMAGE_TAG}"
                     }
                 }
@@ -70,22 +68,14 @@ pipeline {
 
     post {
         success {
-            slackSend(
-                channel: env.SLACK_CHANNEL, 
-                color: 'good', 
-                message: "Build #${env.BUILD_NUMBER} succeeded."
-            )
+            echo "SUCCESS: Build #${env.BUILD_NUMBER} completed successfully."
         }
         failure {
             script {
                 // Rollback logic: tear down broken deployment
                 sh "docker-compose -f ${env.DEPLOY_COMPOSE_FILE} down || true"
             }
-            slackSend(
-                channel: env.SLACK_CHANNEL, 
-                color: 'danger', 
-                message: "Build #${env.BUILD_NUMBER} failed."
-            )
+            echo "FAILURE: Build #${env.BUILD_NUMBER} failed."
         }
         always {
             sh 'docker image prune -f'
