@@ -42,17 +42,15 @@ pipeline {
             }
         }
 
-    stage('docker compose') {
-            steps {
-               sh '''
-               docker compose down --remove-orphans || true
+   stage('docker compose') {
+    steps {
+        sh '''
+        docker-compose down --remove-orphans || true
+        docker-compose up -d --force-recreate
+        '''
+    }
+}
 
-               docker compose up -d --force-recreate
-               '''
-
-            }
-
-       }
 
    stage('Docker Cleanup') {
 
