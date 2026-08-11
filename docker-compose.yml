@@ -3,7 +3,7 @@ services:
     build:
       context: .
 
-    image: appu76/task2:latest
+    image: sidhu9676/Assignment:latest
 
     ports:
       - "8082:8082"
