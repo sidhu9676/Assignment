@@ -44,11 +44,20 @@ pipeline {
 
    stage('docker compose') {
     steps {
-        sh '''
+        sh """
+        export IMAGE_NAME="${IMAGE_NAME}"
+        export IMAGE_TAG="${IMAGE_TAG}"
+
         docker-compose down --remove-orphans || true
         docker-compose up -d --force-recreate
-        '''
+
+        # Print out the dynamic external port assigned by Docker
+        echo "Application is accessible on host port:"
+        docker-compose port assignment-app 8082
+        """
     }
+}
+
 }
 
 
