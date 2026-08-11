@@ -5,7 +5,7 @@ pipeline {
     
 
     environment {
-        IMAGE_NAME = "sidhu9676/Assignment"
+        IMAGE_NAME = "sidhu9676/assignment"
         IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
