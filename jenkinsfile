@@ -53,7 +53,7 @@ pipeline {
 
         # Print out the dynamic external port assigned by Docker
         echo "Application is accessible on host port:"
-        docker-compose port assignment-app 8082
+        docker-compose port assignment-app 8091
         """
     }
 }
