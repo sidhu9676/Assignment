@@ -14,7 +14,7 @@ pipeline {
         stage('SCM Pull') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/apoorvaamrutheshc4-cpu/task1.git'
+                    url: 'https://github.com/sidhu9676/Assignment.git'
             }
         }
 
