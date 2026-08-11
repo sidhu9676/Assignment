@@ -6,7 +6,7 @@ services:
     image: sidhu9676/assignment:latest
 
     ports:
-      - "8082:8082"
+      - "8082:8091"
 
     restart: unless-stopped
 
