@@ -1,79 +1,50 @@
 pipeline {
-
     agent any
-
-    
-
     environment {
         IMAGE_NAME = "sidhu9676/assignment"
-        IMAGE_TAG = "${BUILD_NUMBER}"
+        IMAGE_TAG  = "${BUILD_NUMBER}"
     }
-
     stages {
-
         stage('SCM Pull') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/sidhu9676/Assignment.git'
+                git branch: 'main', url: 'https://github.com/sidhu9676/Assignment.git'
             }
         }
-
-    stage('Compile') {
+        stage('Maven Package') {
             steps {
-                sh 'mvn clean compile'
-            }
-        }
-
-    stage('Package') {
-            steps {
+                // Combines compile and package into one fast step
                 sh 'mvn clean package -DskipTests'
             }
         }
-
-    stage('Build Docker Image') {
+        stage('Build Docker Image') {
             steps {
-
                 sh """
-                docker build \
-                -t ${IMAGE_NAME}:${IMAGE_TAG} .
-                docker tag ${IMAGE_NAME}:${IMAGE_TAG}  ${IMAGE_NAME}:latest
-
+                docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest
                 """
             }
         }
-
-   stage('docker compose') {
-    steps {
-        sh """
-        export IMAGE_NAME="${IMAGE_NAME}"
-        export IMAGE_TAG="${IMAGE_TAG}"
-
-        docker-compose down --remove-orphans || true
-        docker-compose up -d --force-recreate
-
-        # Print out the dynamic external port assigned by Docker
-        echo "Application is accessible on host port:"
-        docker-compose port assignment-app 8091
-        """
-    }
-}
-
-
-
-   stage('Docker Cleanup') {
-
+        stage('Docker Compose Deploy') {
             steps {
-
+                // Injecting variables directly into the compose runtime environment
+                withEnv(["IMAGE_NAME=${IMAGE_NAME}", "IMAGE_TAG=${IMAGE_TAG}"]) {
+                    sh """
+                    docker-compose down --remove-orphans || true
+                    docker-compose up -d --force-recreate
+                    
+                    echo "Application mapping check:"
+                    docker-compose port app 8082
+                    """
+                }
+            }
+        }
+        stage('Docker Cleanup') {
+            steps {
                 sh '''
-
                 docker image prune -f
-
                 docker system df
-
                 '''
             }
         }
-
-       
-   }        
+    }
 }
