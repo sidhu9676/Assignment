@@ -3,11 +3,11 @@ services:
     build:
       context: .
 
-    image: appu76/task2:latest
+    image: sidhu9676/assignment:latest
 
     ports:
-      - "8082:8082"
+      - "8091:8082"
 
-    restart: unless-stopped
+    restart: Always
 
 
