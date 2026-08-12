@@ -2,7 +2,8 @@ services:
   app:
     build:
       context: .
-    image: sidhu9676/assignment:latest
+    # Uses variables passed from Jenkins, falls back to latest if empty
+    image: ${IMAGE_NAME}:${IMAGE_TAG:-latest}
     ports:
       - "8091:8082"
     restart: "always"
