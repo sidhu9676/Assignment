@@ -1,7 +1,0 @@
-services:
-  assignment:  # Changed from 'app' to match your Jenkinsfile
-    image: ${IMAGE_NAME}:${IMAGE_TAG}  # Uses the exact image tag built by Jenkins
-    ports:
-      - "8091:8082"  # Maps host port 8091 to container port 8082
-    restart: unless-stopped
-    # The 'build:' block has been completely removed to prevent Buildx errors
