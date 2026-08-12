@@ -2,12 +2,7 @@ services:
   app:
     build:
       context: .
-
     image: sidhu9676/assignment:latest
-
     ports:
       - "8091:8082"
-
-    restart: "Always"
-
-
+    restart: "always"
