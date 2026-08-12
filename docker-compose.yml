@@ -1,0 +1,13 @@
+services:
+  app:
+    build:
+      context: .
+
+    image: appu76/task2:latest
+
+    ports:
+      - "8082:8082"
+
+    restart: unless-stopped
+
+
